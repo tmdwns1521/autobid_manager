@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Users & Workspaces ──────────────────────────────────────────────────────
+
+model User {
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         String      @default("member")
+  workspaces   Workspace[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Workspace {
+  id         String      @id @default(cuid())
+  name       String
+  owner      User        @relation(fields: [ownerId], references: [id])
+  ownerId    String
+  plan       String      @default("lite")
+  adAccounts AdAccount[]
+  createdAt  DateTime    @default(now())
+}
+
+// ─── Ad Accounts ─────────────────────────────────────────────────────────────
+
+model AdAccount {
+  id                     String     @id @default(cuid())
+  workspace              Workspace  @relation(fields: [workspaceId], references: [id])
+  workspaceId            String
+  naverCustomerId        String
+  accountName            String
+  accessLicenseEncrypted String
+  secretKeyEncrypted     String
+  status                 String     @default("active")
+  lastSyncedAt           DateTime?
+  campaigns              Campaign[]
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
+}
+
+// ─── Campaign / Group / Keyword ──────────────────────────────────────────────
+
+model Campaign {
+  id             String     @id @default(cuid())
+  adAccount      AdAccount  @relation(fields: [adAccountId], references: [id])
+  adAccountId    String
+  naverCampaignId String
+  name           String
+  status         String
+  dailyBudget    Int?
+  adGroups       AdGroup[]
+  syncedAt       DateTime?
+  createdAt      DateTime   @default(now())
+}
+
+model AdGroup {
+  id              String     @id @default(cuid())
+  campaign        Campaign   @relation(fields: [campaignId], references: [id])
+  campaignId      String
+  naverAdgroupId  String
+  name            String
+  status          String
+  deviceStrategy  String?
+  regionStrategy  String?
+  baseBid         Int?
+  keywords        Keyword[]
+  syncedAt        DateTime?
+  createdAt       DateTime   @default(now())
+}
+
+model Keyword {
+  id              String         @id @default(cuid())
+  adGroup         AdGroup        @relation(fields: [adGroupId], references: [id])
+  adGroupId       String
+  naverKeywordId  String
+  keywordText     String
+  currentBid      Int
+  status          String
+  qualityScore    Int?
+  biddingRules    BiddingRule[]
+  rankChecks      RankCheck[]
+  bidChanges      BidChange[]
+  lastSyncedAt    DateTime?
+  createdAt       DateTime       @default(now())
+}
+
+// ─── Bidding Rule ────────────────────────────────────────────────────────────
+
+model BiddingRule {
+  id               String         @id @default(cuid())
+  keyword          Keyword        @relation(fields: [keywordId], references: [id])
+  keywordId        String
+  targetRank       Int
+  rankUpperBound   Int
+  rankLowerBound   Int
+  minBid           Int
+  maxBid           Int
+  baseStep         Int            @default(100)
+  device           String         @default("MOBILE")
+  region           String?
+  schedule         Json?
+  cooldownMinutes  Int            @default(5)
+  isActive         Boolean        @default(true)
+  adType           String         @default("POWERLINK")
+  biddingState     BiddingState?
+  rankChecks       RankCheck[]
+  bidChanges       BidChange[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+// ─── Bidding State ───────────────────────────────────────────────────────────
+
+model BiddingState {
+  id                String      @id @default(cuid())
+  biddingRule       BiddingRule @relation(fields: [biddingRuleId], references: [id])
+  biddingRuleId     String      @unique
+  state             String      @default("SEARCHING")
+  lastCheckedAt     DateTime?
+  lastBidChangedAt  DateTime?
+  stableBid         Int?
+  stableCount       Int         @default(0)
+  lastSuccessRank   Int?
+  failCount         Int         @default(0)
+  noRankChangeCount Int         @default(0)
+  cooldownUntil     DateTime?
+  updatedAt         DateTime    @updatedAt
+}
+
+// ─── Rank Check ──────────────────────────────────────────────────────────────
+
+model RankCheck {
+  id             String      @id @default(cuid())
+  keyword        Keyword     @relation(fields: [keywordId], references: [id])
+  keywordId      String
+  biddingRule    BiddingRule @relation(fields: [biddingRuleId], references: [id])
+  biddingRuleId  String
+  checkedKeyword String
+  device         String
+  region         String?
+  rank           Int?
+  found          Boolean     @default(false)
+  status         String      @default("SUCCESS")
+  errorMessage   String?
+  checkedAt      DateTime    @default(now())
+}
+
+// ─── Bid Change Log ──────────────────────────────────────────────────────────
+
+model BidChange {
+  id            String      @id @default(cuid())
+  keyword       Keyword     @relation(fields: [keywordId], references: [id])
+  keywordId     String
+  biddingRule   BiddingRule @relation(fields: [biddingRuleId], references: [id])
+  biddingRuleId String
+  beforeBid     Int
+  afterBid      Int
+  beforeRank    Int?
+  decision      String
+  reason        String?
+  apiResult     String?
+  apiSuccess    Boolean?
+  createdAt     DateTime    @default(now())
+}
