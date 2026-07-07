@@ -75,6 +75,7 @@ export interface BidJobPayload {
   adAccountId: string
   naverCustomerId: string
   naverKeywordId: string
+  naverAdGroupId: string
   keyword: string
   currentBid: number
   device: Device
@@ -84,4 +85,5 @@ export interface BidJobPayload {
   maxBid: number
   baseStep: number
   cooldownMinutes: number
+  siteUrl?: string
 }

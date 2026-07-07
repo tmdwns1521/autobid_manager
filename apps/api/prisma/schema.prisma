@@ -50,28 +50,30 @@ model AdAccount {
 // ─── Campaign / Group / Keyword ──────────────────────────────────────────────
 
 model Campaign {
-  id             String     @id @default(cuid())
-  adAccount      AdAccount  @relation(fields: [adAccountId], references: [id])
-  adAccountId    String
-  naverCampaignId String
-  name           String
-  status         String
-  dailyBudget    Int?
-  adGroups       AdGroup[]
-  syncedAt       DateTime?
-  createdAt      DateTime   @default(now())
+  id              String     @id @default(cuid())
+  adAccount       AdAccount  @relation(fields: [adAccountId], references: [id])
+  adAccountId     String
+  naverCampaignId String     @unique
+  name            String
+  status          String
+  campaignTp      String?
+  dailyBudget     Int?
+  adGroups        AdGroup[]
+  syncedAt        DateTime?
+  createdAt       DateTime   @default(now())
 }
 
 model AdGroup {
   id              String     @id @default(cuid())
   campaign        Campaign   @relation(fields: [campaignId], references: [id])
   campaignId      String
-  naverAdgroupId  String
+  naverAdgroupId  String     @unique
   name            String
   status          String
   deviceStrategy  String?
   regionStrategy  String?
   baseBid         Int?
+  siteUrl         String?
   keywords        Keyword[]
   syncedAt        DateTime?
   createdAt       DateTime   @default(now())
@@ -81,7 +83,7 @@ model Keyword {
   id              String         @id @default(cuid())
   adGroup         AdGroup        @relation(fields: [adGroupId], references: [id])
   adGroupId       String
-  naverKeywordId  String
+  naverKeywordId  String         @unique
   keywordText     String
   currentBid      Int
   status          String
@@ -111,6 +113,7 @@ model BiddingRule {
   cooldownMinutes  Int            @default(5)
   isActive         Boolean        @default(true)
   adType           String         @default("POWERLINK")
+  siteUrl          String?
   biddingState     BiddingState?
   rankChecks       RankCheck[]
   bidChanges       BidChange[]
@@ -133,6 +136,8 @@ model BiddingState {
   failCount         Int         @default(0)
   noRankChangeCount Int         @default(0)
   cooldownUntil     DateTime?
+  searchLow         Int?        // 이진 탐색 하한 (너무 낮아서 순위 이탈한 값)
+  searchHigh        Int?        // 이진 탐색 상한 (순위 달성이 확인된 값)
   updatedAt         DateTime    @updatedAt
 }
 

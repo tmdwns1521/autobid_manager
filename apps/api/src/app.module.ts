@@ -11,6 +11,7 @@ import { BiddingRulesModule } from './modules/bidding-rules/bidding-rules.module
 import { LogsModule } from './modules/logs/logs.module'
 import { ReportsModule } from './modules/reports/reports.module'
 import { NaverModule } from './naver/naver.module'
+import { BiddingModule } from './modules/bidding/bidding.module'
 import { QUEUE_NAMES } from '@autobid/shared'
 
 @Module({
@@ -42,6 +43,7 @@ import { QUEUE_NAMES } from '@autobid/shared'
     LogsModule,
     ReportsModule,
     NaverModule,
+    BiddingModule,
   ],
 })
 export class AppModule {}
